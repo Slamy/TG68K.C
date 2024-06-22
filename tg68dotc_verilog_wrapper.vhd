@@ -27,8 +27,9 @@ begin
 
   tg68kdotcinst: entity work.TG68KdotC_Kernel
     port map (
-      CPU => "00",
+      CPU => "01",
       clk => clk,
+      clkena_in => clkena_in,
       nReset => nReset,
       data_in => data_in,
       IPL => IPL,
