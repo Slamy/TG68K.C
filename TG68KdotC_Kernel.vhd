@@ -1518,6 +1518,8 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 		IF trapmake='1' AND trapd='0' THEN
 			IF cpu(1)='1' AND (trap_trapv='1' OR set_Z_error='1' OR exec(trap_chk)='1') THEN
 				next_micro_state <= trap00;
+			elsif trap_addr_error='1' THEN
+				next_micro_state <= trap4; -- long frame like bus error
 			else
 				next_micro_state <= trap0;
 			end if;
@@ -1637,6 +1639,11 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 ------------------------------------------------------------------------------
 --prepare opcode
 ------------------------------------------------------------------------------
+
+		if (TG68_PC(0) = '1') then
+			trap_addr_error <= '1';
+			trapmake <= '1';
+		else
 		CASE opcode(15 downto 12) IS
 -- 0000 ----------------------------------------------------------------------------
 			WHEN "0000" =>
@@ -3179,6 +3186,8 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 				trapmake <= '1';
 
 		END CASE;
+		end if;
+
 
 -- use for AND, OR, EOR, CMP
 		IF build_logical='1' THEN
