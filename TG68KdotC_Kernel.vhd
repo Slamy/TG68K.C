@@ -794,6 +794,8 @@ PROCESS (clk)
 				ELSIF exec(writePC_add)='1' THEN
 					data_write_tmp <= TG68_PC_add;
 -- paste and copy form TH	---------	
+				elsif micro_state>=trap4 and micro_state <= trap10 THEN
+					data_write_tmp <= "00000000000000000000000000000000";
 				elsif micro_state=trap00 THEN
 					data_write_tmp <= exe_pc; --TH
 					useStackframe2<='1';
@@ -805,6 +807,10 @@ PROCESS (clk)
 					IF	useStackframe2='1' THEN
 						-- stack frame format #2
 						data_write_tmp(15 downto 0) <= "0010" & trap_vector(11 downto 0); --TH
+
+					elsif trap_berr='1' or trap_addr_error='1' then
+						data_write_tmp(15 downto 0) <= "1111" & trap_vector(11 downto 0);
+						writePCnext <= trap_trap OR trap_trapv OR exec(trap_chk) OR Z_error;
 					else
 						data_write_tmp(15 downto 0) <= "0000" & trap_vector(11 downto 0);
 						writePCnext <= trap_trap OR trap_trapv OR exec(trap_chk) OR Z_error;
@@ -1640,7 +1646,7 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 --prepare opcode
 ------------------------------------------------------------------------------
 
-		if (TG68_PC(0) = '1') then
+		if (TG68_PC(0) = '1' and micro_state = nop) then
 			trap_addr_error <= '1';
 			trapmake <= '1';
 		else
