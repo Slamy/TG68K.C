@@ -794,8 +794,6 @@ PROCESS (clk)
 				ELSIF exec(writePC_add)='1' THEN
 					data_write_tmp <= TG68_PC_add;
 -- paste and copy form TH	---------	
-				elsif micro_state>=trap4 and micro_state <= trap10 THEN
-					data_write_tmp <= "00000000000000000000000000000000";
 				elsif micro_state=trap00 THEN
 					data_write_tmp <= exe_pc; --TH
 					useStackframe2<='1';
@@ -807,10 +805,6 @@ PROCESS (clk)
 					IF	useStackframe2='1' THEN
 						-- stack frame format #2
 						data_write_tmp(15 downto 0) <= "0010" & trap_vector(11 downto 0); --TH
-
-					elsif trap_berr='1' or trap_addr_error='1' then
-						data_write_tmp(15 downto 0) <= "1111" & trap_vector(11 downto 0);
-						writePCnext <= trap_trap OR trap_trapv OR exec(trap_chk) OR Z_error;
 					else
 						data_write_tmp(15 downto 0) <= "0000" & trap_vector(11 downto 0);
 						writePCnext <= trap_trap OR trap_trapv OR exec(trap_chk) OR Z_error;
@@ -1429,7 +1423,7 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 		 build_bcd, set_Z_error, trapd, movem_run, last_data_read, set, set_V_Flag, z_error, trap_trace, trap_interrupt,
 		 SVmode, preSVmode, stop, long_done, ea_only, setstate, addrvalue, execOPC, exec_write_back, exe_datatype,
 		 datatype, interrupt, c_out, trapmake, rot_cnt, brief, addr, trap_trapv, last_data_in, use_VBR_Stackframe,
-		 long_start, set_datatype, sndOPC, set_exec, exec, ea_build_now, reg_QA, reg_QB, make_berr, trap_berr, trap_addr_error, TG68_PC)
+		 long_start, set_datatype, sndOPC, set_exec, exec, ea_build_now, reg_QA, reg_QB, make_berr, trap_berr)
 	BEGIN
 		TG68_PC_brw <= '0';	
 		setstate <= "00";
@@ -1515,7 +1509,7 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 		END IF;
 		
 		IF interrupt='1' AND trap_berr='1' THEN
-			next_micro_state <= trap4;
+			next_micro_state <= trap0;
 			IF preSVmode='0' THEN
 				set(changeMode) <= '1';
 			END IF;
@@ -1524,8 +1518,6 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 		IF trapmake='1' AND trapd='0' THEN
 			IF cpu(1)='1' AND (trap_trapv='1' OR set_Z_error='1' OR exec(trap_chk)='1') THEN
 				next_micro_state <= trap00;
-			elsif trap_addr_error='1' THEN
-				next_micro_state <= trap4; -- long frame like bus error
 			else
 				next_micro_state <= trap0;
 			end if;
@@ -1645,11 +1637,6 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 ------------------------------------------------------------------------------
 --prepare opcode
 ------------------------------------------------------------------------------
-
-		if (TG68_PC(0) = '1' and micro_state = nop) then
-			trap_addr_error <= '1';
-			trapmake <= '1';
-		else
 		CASE opcode(15 downto 12) IS
 -- 0000 ----------------------------------------------------------------------------
 			WHEN "0000" =>
@@ -3192,8 +3179,6 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 				trapmake <= '1';
 
 		END CASE;
-		end if;
-
 
 -- use for AND, OR, EOR, CMP
 		IF build_logical='1' THEN
@@ -3754,7 +3739,11 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 					setstate <= "11";
 					datatype <= "01";
 					writeSR <= '1';
-					next_micro_state <= trap3;
+					IF trap_berr='1' THEN
+						next_micro_state <= trap4;
+					ELSE
+						next_micro_state <= trap3;
+					END IF;
 				WHEN trap3 =>		-- TRAP
 					set_vectoraddr <= '1';
 					datatype <= "10";
@@ -3762,53 +3751,27 @@ PROCESS (clk, cpu, OP1out, OP2out, opcode, exe_condition, nextpass, micro_state,
 					set(directPC) <= '1';
 					setstate <= "10";
 					next_micro_state <= nopnop;
-
-				-- SCC68070 bus error stack frame consists of 17 words
-				-- The information itself seems to be ignored by the CDi rom.
-				-- Just fill with 13 words of zero data until the continue
-				-- with the original 4 words of the 68010 exception frame.
 				WHEN trap4 =>		-- TRAP
 					set(presub) <= '1';
 					setstackaddr <='1';
 					setstate <= "11";
-					datatype <= "10";
+					datatype <= "01";
+					writeSR <= '1';
 					next_micro_state <= trap5;
 				WHEN trap5 =>		-- TRAP
 					set(presub) <= '1';
 					setstackaddr <='1';
 					setstate <= "11";
 					datatype <= "10";
+					writeSR <= '1';
 					next_micro_state <= trap6;
 				WHEN trap6 =>		-- TRAP
 					set(presub) <= '1';
 					setstackaddr <='1';
 					setstate <= "11";
-					datatype <= "10";
-					next_micro_state <= trap7;
-				WHEN trap7 =>		-- TRAP
-					set(presub) <= '1';
-					setstackaddr <='1';
-					setstate <= "11";
-					datatype <= "10";
-					next_micro_state <= trap8;
-				WHEN trap8 =>		-- TRAP
-					set(presub) <= '1';
-					setstackaddr <='1';
-					setstate <= "11";
-					datatype <= "10";
-					next_micro_state <= trap9;
-				WHEN trap9 =>		-- TRAP
-					set(presub) <= '1';
-					setstackaddr <='1';
-					setstate <= "11";
-					datatype <= "10";
-					next_micro_state <= trap10;
-				WHEN trap10 =>		-- TRAP
-					set(presub) <= '1';
-					setstackaddr <='1';
-					setstate <= "11";
 					datatype <= "01";
-					next_micro_state <= trap0;
+					writeSR <= '1';
+					next_micro_state <= trap3;
 					
 										-- return from exception - RTE
 										-- fetch PC and status register from stack
