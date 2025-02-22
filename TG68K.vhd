@@ -68,8 +68,8 @@ COMPONENT TG68KdotC_Kernel
       DIV_Mode : integer := 2;         --0=>16Bit,    1=>32Bit,         2=>switchable with CPU(1),  3=>no DIV,  
       BitField : integer := 2;         --0=>no,       1=>yes,           2=>switchable with CPU(1) 
       
-      BarrelShifter : integer := 2;    --0=>no,       1=>yes,           2=>switchable with CPU(1)  
-      MUL_Hardware : integer := 1      --0=>no,       1=>yes,  
+      BarrelShifter : integer := 0;    --0=>no,       1=>yes,           2=>switchable with CPU(1)  
+      MUL_Hardware : integer := 0      --0=>no,       1=>yes,  
    );
    port(
       CPU            : in std_logic_vector(1 downto 0):="01";  -- 00->68000  01->68010  11->68020
@@ -148,7 +148,7 @@ cpu1: TG68KdotC_Kernel
       BitField => 2,             --0=>no,       1=>yes,           2=>switchable with CPU(1) 
 
       BarrelShifter => 0,        --0=>no,       1=>yes,           2=>switchable with CPU(1)  
-      MUL_Hardware => 1          --0=>no,       1=>yes,  
+      MUL_Hardware => 0          --0=>no,       1=>yes,  
    )
    PORT MAP(
       CPU => CPU,                -- : in std_logic_vector(1 downto 0):="01";  -- 00->68000  01->68010  11->68020

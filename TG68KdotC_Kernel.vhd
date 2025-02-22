@@ -113,8 +113,8 @@ entity TG68KdotC_Kernel is
 		DIV_Mode : integer := 2;			--0=>16Bit,		1=>32Bit,			2=>switchable with CPU(1),  3=>no DIV,  
 		BitField : integer := 2;			--0=>no,			1=>yes,				2=>switchable with CPU(1) 
 		
-		BarrelShifter : integer := 1;		--0=>no,			1=>yes,				2=>switchable with CPU(1)  
-		MUL_Hardware : integer := 1		--0=>no,			1=>yes,  
+		BarrelShifter : integer := 0;		--0=>no,			1=>yes,				2=>switchable with CPU(1)  
+		MUL_Hardware : integer := 0		--0=>no,			1=>yes,  
 		);
 	port(clk						: in std_logic;
 		nReset					: in std_logic;			--low active

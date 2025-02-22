@@ -22,7 +22,6 @@ entity tg68kdotc_verilog_wrapper is
 end entity;
 
 architecture themagic of tg68kdotc_verilog_wrapper is
-
 begin
 
   tg68kdotcinst: entity work.TG68KdotC_Kernel
